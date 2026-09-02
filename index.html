@@ -305,9 +305,27 @@
         api_host: 'https://eu.i.posthog.com',
         defaults: '2026-05-30',
         capture_pageview: false,
+        capture_pageleave: true,
         person_profiles: 'identified_only'
     });
     posthog.register({ site: 'mgazdzik-personal' });
+
+    // Outbound link click tracking (LinkedIn, GitHub, ez-pollster.dev, book link, etc.)
+    document.addEventListener('click', function(e){
+        var a = e.target.closest('a[href]');
+        if(!a) return;
+        var href = a.getAttribute('href');
+        if(!href || href.charAt(0) === '#') return; // internal hash-route nav, already tracked as pageviews
+        var isExternal = /^https?:\/\//i.test(href) && a.hostname !== window.location.hostname;
+        if(!isExternal) return;
+        if(window.posthog){
+            posthog.capture('outbound_link_click', {
+                url: href,
+                link_text: (a.textContent || '').trim().slice(0, 100),
+                from_page: window.location.hash || '#/'
+            });
+        }
+    }, true);
 </script>
 </head>
 <body>
