@@ -138,6 +138,37 @@
   .nav-links a:hover{background:var(--paper);color:var(--orange);}
   .nav-links a[aria-current="page"]{background:var(--ink);color:var(--cream);}
 
+  .nav-more{position:relative;}
+  .nav-more>summary{
+    display:flex;align-items:center;gap:5px;cursor:pointer;list-style:none;
+    font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;letter-spacing:0.04em;
+    text-transform:uppercase;color:var(--ink);
+    padding:7px 12px;border-radius:8px;transition:background .15s,color .15s;
+  }
+  .nav-more>summary::-webkit-details-marker{display:none;}
+  .nav-more>summary:hover{background:var(--paper);color:var(--orange);}
+  .nav-more[open]>summary,.nav-more.is-active>summary{background:var(--ink);color:var(--cream);}
+  .nav-more>summary svg{transition:transform .15s ease;flex:none;}
+  .nav-more[open]>summary svg{transform:rotate(180deg);}
+  .nav-more-menu{
+    position:absolute;top:calc(100% + 8px);left:0;
+    background:var(--paper);border:1px solid var(--paper-line);border-radius:14px;
+    box-shadow:0 10px 28px rgba(0,0,0,.10);padding:10px;
+    display:grid;gap:6px;z-index:30;
+  }
+  .nav-more-menu a{
+    display:flex;flex-direction:column;gap:3px;min-width:200px;max-width:230px;
+    padding:9px 12px;border-radius:10px;border:1px solid transparent;
+    text-decoration:none;transition:border-color .15s,background .15s;
+  }
+  .nav-more-menu a:hover{border-color:var(--orange);background:var(--cream);}
+  .nav-more-menu .tile-title{
+    font-family:'Figtree',sans-serif;font-weight:700;font-size:14px;color:var(--ink);
+  }
+  .nav-more-menu a:hover .tile-title{color:var(--orange);}
+  .nav-more-menu .tile-sub{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);}
+  .nav-more-menu .ext{font-size:11px;color:var(--muted);margin-left:3px;}
+
   /* ---------- HERO ---------- */
   header.hero{padding:56px 0 56px;}
   .hero-grid{
@@ -369,10 +400,37 @@
     <a class="nav-brand" href="#/">Michał Gaździk</a>
     <div class="nav-links">
       <a href="#/" data-nav="/">Home</a>
-      <a href="#/cxms" data-nav="/cxms">ez-brainer</a>
-      <a href="#/ez-pollster" data-nav="/ez-pollster">ez-pollster</a>
+      <details class="nav-more">
+        <summary>Products <svg width="10" height="10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+        <div class="nav-more-menu">
+          <a href="#/cxms" data-nav="/cxms">
+            <span class="tile-title">ez-brainer</span>
+            <span class="tile-sub">Context mgmt for AI teams</span>
+          </a>
+          <a href="#/ez-pollster" data-nav="/ez-pollster">
+            <span class="tile-title">ez-pollster</span>
+            <span class="tile-sub">Surveys inside your AI agent</span>
+          </a>
+        </div>
+      </details>
+      <details class="nav-more">
+        <summary>Thoughts <svg width="10" height="10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+        <div class="nav-more-menu">
+          <a href="#/book" data-nav="/book">
+            <span class="tile-title">Book</span>
+            <span class="tile-sub">&ldquo;Product Owner&rdquo;</span>
+          </a>
+          <a href="https://open.spotify.com/episode/0uKGzDhgHirUpLGLATx9SV" target="_blank" rel="noopener">
+            <span class="tile-title">Podcast u Sadowskiego<span class="ext">&#8599;</span></span>
+            <span class="tile-sub">Michał Sadowski Podcast Biznesowy</span>
+          </a>
+          <a href="https://justjoin.it/blog/jedna-osoba-nie-powinna-stawiac-celow" target="_blank" rel="noopener">
+            <span class="tile-title">Wywiad na JustJoin.it<span class="ext">&#8599;</span></span>
+            <span class="tile-sub">Async Q&amp;A</span>
+          </a>
+        </div>
+      </details>
       <a href="#/github" data-nav="/github">Open Source</a>
-      <a href="#/book" data-nav="/book">Book</a>
       <a href="#/mentoring" data-nav="/mentoring">Mentoring</a>
     </div>
   </div>
@@ -743,9 +801,13 @@
     document.querySelectorAll('[data-page]').forEach(function(el){
       el.hidden = el.getAttribute('data-page') !== hash;
     });
-    document.querySelectorAll('.nav-links a').forEach(function(a){
+    document.querySelectorAll('.nav-links a[data-nav]').forEach(function(a){
       if(a.getAttribute('data-nav') === hash){ a.setAttribute('aria-current','page'); }
       else { a.removeAttribute('aria-current'); }
+    });
+    document.querySelectorAll('.nav-more').forEach(function(details){
+      var hasActiveChild = !!details.querySelector('a[aria-current="page"]');
+      details.classList.toggle('is-active', hasActiveChild);
     });
     document.title = titles[hash];
     window.scrollTo(0,0);
@@ -753,6 +815,18 @@
   }
   window.addEventListener('hashchange', route);
   route();
+
+  // "Products"/"Thoughts" dropdowns: close on outside click, and close after
+  // picking an internal link (external links already leave the page/open a
+  // new tab, so no hashchange fires there to close them on).
+  document.querySelectorAll('.nav-more').forEach(function(details){
+    document.addEventListener('click', function(event){
+      if(details.open && !details.contains(event.target)){ details.open = false; }
+    });
+    details.querySelectorAll('a[data-nav]').forEach(function(a){
+      a.addEventListener('click', function(){ details.open = false; });
+    });
+  });
 })();
 </script>
 
